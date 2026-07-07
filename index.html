@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>Hanoo</title>
+<style>
+*{box-sizing:border-box}body{margin:0;background:#050303;color:#f8eee8;font-family:Arial,sans-serif;user-select:none}img,video{max-width:100%;display:block}header{padding:28px;background:#080505;border-bottom:1px solid #3b1717;display:flex;gap:16px;align-items:center}.logo{width:76px;height:76px;border-radius:18px;border:1px solid #137c48;object-fit:cover}.brand h1{margin:0;font-size:38px;letter-spacing:10px}.brand p{margin:4px 0;color:#19d27b;letter-spacing:8px}.cover{height:240px;background:linear-gradient(135deg,#3a0909,#03130c);border-bottom:1px solid #4a201b}.profile{padding:0 24px 30px}.avatar{width:150px;height:150px;border-radius:28px;border:7px solid #19d27b;margin-top:-75px;background:#111;object-fit:cover}.name{font-size:42px;font-weight:900;margin:22px 0 6px}.bio{font-size:20px;color:#d8c8bf}.section{padding:0 24px 40px}.section h2{color:#e4b873;letter-spacing:9px}.empty,.post{border:1px dashed #4f2b23;border-radius:22px;padding:30px;text-align:center;color:#cbb8ad}.post{margin-bottom:24px;text-align:left;border-style:solid;background:#120606}.post h3{font-size:26px;margin:14px 0}.post p{font-size:18px;line-height:1.6}.date{font-size:13px;color:#9d8a82}.links{display:flex;flex-wrap:wrap;gap:10px;margin-top:15px}.links a{padding:10px 14px;border-radius:999px;background:#1b1010;color:#fff;text-decoration:none;border:1px solid #3d2222}.admin{display:none;position:fixed;inset:0;background:#050303;z-index:9;overflow:auto;padding:24px}.card{background:#180707;border:1px solid #573027;border-radius:24px;padding:22px;margin-bottom:20px}input,textarea{width:100%;padding:16px;border-radius:16px;border:1px solid #4a2a25;background:#060303;color:#fff;font-size:16px;margin:10px 0}textarea{min-height:120px}button{border:0;border-radius:18px;padding:16px 22px;background:#a40f14;color:#fff;font-size:18px;font-weight:800;margin:8px}.tab button{background:#2a1715}.green{background:#0d7a42}.small{font-size:13px;color:#b79f96}.wm:after{content:"HANOO";position:fixed;right:20px;bottom:20px;color:rgba(255,255,255,.08);font-size:32px;font-weight:900;pointer-events:none}
+</style>
+</head>
+<body class="wm" oncontextmenu="return false">
+
+<header>
+<img id="topLogo" class="logo" src="" alt="">
+<div class="brand" id="brandTap"><h1>HANOO</h1><p>EMPIRE</p></div>
+</header>
+
+<div id="cover" class="cover"></div>
+<div class="profile">
+<img id="avatar" class="avatar" src="" alt="">
+<div id="displayName" class="name">Hanoo</div>
+<div id="displayBio" class="bio">Welcome to Hanoo Empire.</div>
+</div>
+
+<div class="section">
+<h2>LATEST POSTS</h2>
+<div id="feed"></div>
+</div>
+
+<div id="admin" class="admin">
+<h1>Admin Dashboard</h1>
+
+<div class="card">
+<h2>Profile</h2>
+<label>Profile Photo</label><input id="profileFile" type="file" accept="image/*">
+<label>Cover Photo</label><input id="coverFile" type="file" accept="image/*">
+<input id="nameInput" placeholder="Name">
+<textarea id="bioInput" placeholder="Bio"></textarea>
+<button onclick="saveProfile()">Save Profile</button>
+</div>
+
+<div class="card">
+<h2>Create Post</h2>
+<input id="mediaFile" type="file" accept="image/*,video/*">
+<input id="titleInput" placeholder="Title optional">
+<textarea id="contentInput" placeholder="Write content"></textarea>
+<input id="fb" placeholder="Facebook link">
+<input id="tt" placeholder="TikTok link">
+<input id="yt" placeholder="YouTube link">
+<input id="ig" placeholder="Instagram link">
+<input id="tg" placeholder="Telegram link">
+<input id="web" placeholder="Website link">
+<button onclick="publish()">Publish</button>
+<button onclick="clearPosts()">Clear Posts</button>
+</div>
+
+<button class="green" onclick="closeAdmin()">Close Admin</button>
+</div>
+
+<script>
+const PIN="0513may";
+let taps=0,lastTap=0;
+let profile=JSON.parse(localStorage.getItem("hanoo_profile")||"{}");
+let posts=JSON.parse(localStorage.getItem("hanoo_posts")||"[]");
+
+function tapAdmin(){
+ let now=Date.now();
+ if(now-lastTap<900)taps++;else taps=1;
+ lastTap=now;
+ if(taps>=2){
+  taps=0;
+  let p=prompt("Admin PIN");
+  if(p===PIN)openAdmin();
+ }
+}
+document.getElementById("topLogo").onclick=tapAdmin;
+document.getElementById("brandTap").onclick=tapAdmin;
+
+function readFile(file,cb){
+ if(!file)return cb("");
+ let r=new FileReader();
+ r.onload=()=>cb(r.result);
+ r.readAsDataURL(file);
+}
+
+function load(){
+ document.getElementById("displayName").textContent=profile.name||"Hanoo";
+ document.getElementById("displayBio").textContent=profile.bio||"Welcome to Hanoo Empire.";
+ document.getElementById("nameInput").value=profile.name||"Hanoo";
+ document.getElementById("bioInput").value=profile.bio||"Welcome to Hanoo Empire.";
+ let logo=profile.avatar||"";
+ document.getElementById("topLogo").src=logo;
+ document.getElementById("avatar").src=logo;
+ if(profile.cover)document.getElementById("cover").style.backgroundImage=`url(${profile.cover})`;
+ renderPosts();
+}
+
+function saveProfile(){
+ profile.name=document.getElementById("nameInput").value||"Hanoo";
+ profile.bio=document.getElementById("bioInput").value||"Welcome to Hanoo Empire.";
+ readFile(document.getElementById("profileFile").files[0],a=>{
+  if(a)profile.avatar=a;
+  readFile(document.getElementById("coverFile").files[0],c=>{
+   if(c)profile.cover=c;
+   localStorage.setItem("hanoo_profile",JSON.stringify(profile));
+   load();alert("Saved");
+  });
+ });
+}
+
+function publish(){
+ readFile(document.getElementById("mediaFile").files[0],media=>{
+  let file=document.getElementById("mediaFile").files[0];
+  posts.unshift({
+   media, type:file&&file.type.startsWith("video")?"video":"image",
+   title:document.getElementById("titleInput").value,
+   content:document.getElementById("contentInput").value,
+   date:new Date().toLocaleDateString(),
+   links:{Facebook:fb.value,TikTok:tt.value,YouTube:yt.value,Instagram:ig.value,Telegram:tg.value,Website:web.value}
+  });
+  localStorage.setItem("hanoo_posts",JSON.stringify(posts));
+  load();alert("Published");
+ });
+}
+
+function renderPosts(){
+ let feed=document.getElementById("feed");
+ if(!posts.length){feed.innerHTML='<div class="empty">No posts yet.</div>';return}
+ feed.innerHTML=posts.map(p=>{
+  let media=p.media?(p.type==="video"?`<video controls controlsList="nodownload" src="${p.media}"></video>`:`<img src="${p.media}">`):"";
+  let links=Object.entries(p.links||{}).filter(x=>x[1]).map(x=>`<a target="_blank" href="${x[1]}">${x[0]}</a>`).join("");
+  return `<div class="post">${media}${p.title?`<h3>${p.title}</h3>`:""}<p>${p.content||""}</p><div class="date">${p.date}</div><div class="links">${links}</div></div>`;
+ }).join("");
+}
+
+function openAdmin(){document.getElementById("admin").style.display="block"}
+function closeAdmin(){document.getElementById("admin").style.display="none"}
+function clearPosts(){if(confirm("Delete all posts?")){posts=[];localStorage.removeItem("hanoo_posts");load()}}
+document.addEventListener("copy",e=>e.preventDefault());
+document.addEventListener("dragstart",e=>e.preventDefault());
+load();
+</script>
+</body>
+</html>
